@@ -13,28 +13,29 @@ exports.signup = async (req, res) => {
   try {
     const { fullName, email, phone, password, role } = req.body;
 
-    // check role
     if (!["tenant", "landlord"].includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // check if user exists
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create user
-    const user = await User.create({
+    const userData = {
       fullName,
       email,
       phone,
       password: hashedPassword,
       role,
-    });
+    };
+
+    // Save ID document URL if uploaded
+    if (req.file && req.file.path) {
+      userData.idDocument = req.file.path; // Cloudinary URL
+    }
+
+    const user = await User.create(userData);
 
     res.status(201).json({
       message: "Signup successful",
@@ -43,6 +44,7 @@ exports.signup = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        idDocument: user.idDocument || null,
       },
       token: generateToken(user._id, user.role),
     });
@@ -50,6 +52,7 @@ exports.signup = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // @desc Login user
 // @route POST /api/auth/login
