@@ -12,6 +12,11 @@ const messageRoutes = require("./routes/messageRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const rentalRoutes = require("./routes/rentalRoutes"); // rental listings
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://preview--rental-realm-link.lovable.app",
+  "https://rental-realm-link.lovable.app", // optional: if your main site uses this domain
+];
 
 // Connect to MongoDB
 connectDB();
@@ -21,9 +26,17 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+
 app.use(
   require("cors")({
-    origin: "http://localhost:3000", // frontend URL
+    origin: function (origin, callback) {
+      // allow requests with no origin (like Postman or server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
