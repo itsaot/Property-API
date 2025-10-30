@@ -1,29 +1,35 @@
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const { connectDB } = require("./config/db");
 require("dotenv").config();
 
-const app = express();
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Connect to MongoDB
-mongoose
-  .connect("mongodb://localhost:27017/Property")
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
-// Routes
+// Import routes
+const paymentRoutes = require("./routes/payment");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const rentalRoutes = require("./routes/rentalRoutes"); // if you have rental listings
+const rentalRoutes = require("./routes/rentalRoutes"); // rental listings
 
+// Connect to MongoDB
+connectDB();
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  require("cors")({
+    origin: "http://localhost:3000", // frontend URL
+    credentials: true,
+  })
+);
+
+// Routes
+app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
