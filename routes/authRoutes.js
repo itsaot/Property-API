@@ -8,5 +8,7 @@ router.post("/signup", upload.single("idDocument"), signup);
 router.post("/login", login);
 router.get("/me", auth, getMe);
 router.put("/setup", auth, profileSetup);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 module.exports = router;

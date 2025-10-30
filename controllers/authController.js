@@ -159,3 +159,61 @@ exports.login = async (req, res) => {
 
   res.json({ message: "Login successful", user });
 };
+
+// 🔹 FORGOT PASSWORD
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Create reset token (valid for 15 minutes)
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    // Send reset email
+    await sendEmail(
+      user.email,
+      "Password Reset Request",
+      `<p>Hello ${user.fullName || "user"},</p>
+       <p>You requested a password reset. Click the link below to reset your password:</p>
+       <a href="${resetLink}">${resetLink}</a>
+       <p>This link will expire in 15 minutes.</p>`
+    );
+
+    res.json({ message: "Password reset email sent" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error sending reset email", error: error.message });
+  }
+};
+
+// 🔹 RESET PASSWORD
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ message: "Invalid or expired token", error: error.message });
+  }
+};
