@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async (to, subject, html) => {
   try {
     await transporter.sendMail({
-      from: `"Property Platform" <${process.env.EMAIL_USER}>`,
+      from: `"RamShelf" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
