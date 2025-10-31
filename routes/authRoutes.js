@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { signup, login, getMe, profileSetup, forgotPassword, resetPassword } = require("../controllers/authController");
+const { signup, login,logout, getMe, profileSetup, forgotPassword, resetPassword } = require("../controllers/authController");
 const { auth } = require("../middleware/auth");
 const upload = require("../utils/fileUpload");
 
