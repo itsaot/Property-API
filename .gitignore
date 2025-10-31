@@ -25,3 +25,6 @@ uploads/
 # Optional IDE files
 .vscode/
 .idea/
+
+# Ignore admin creation script
+createAdmin.js
