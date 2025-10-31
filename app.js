@@ -16,7 +16,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://preview--rental-realm-link.lovable.app",
   "https://rental-realm-link.lovable.app",
-  "https://preview--ramshelf-property-hub.lovable.app" // optional: if your main site uses this domain
+  "https://preview--ramshelf-property-hub.lovable.app",
+  "https://ramshelf.vercel.app/" // optional: if your main site uses this domain
 ];
 
 // Connect to MongoDB
