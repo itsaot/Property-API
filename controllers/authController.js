@@ -12,15 +12,31 @@ const generateToken = (id, role) => {
 // @desc Signup user (tenant / landlord)
 // @route POST /api/auth/signup
 exports.signup = async (req, res) => {
+  console.log("🟦 [SIGNUP] Incoming request...");
+
+  // Log all important incoming data for debugging
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
+  console.log("File received:", req.file ? req.file.originalname : "❌ No file uploaded");
+
   try {
     const { fullName, email, phone, password, role } = req.body;
 
+    if (!fullName || !email || !phone || !password || !role) {
+      console.warn("⚠️ Missing required fields:", { fullName, email, phone, password, role });
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     if (!["tenant", "landlord"].includes(role)) {
+      console.warn("⚠️ Invalid role:", role);
       return res.status(400).json({ message: "Invalid role" });
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    if (existingUser) {
+      console.warn("⚠️ User already exists:", { email, phone });
+      return res.status(400).json({ message: "User already exists" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -30,14 +46,14 @@ exports.signup = async (req, res) => {
       phone,
       password: hashedPassword,
       role,
+      idDocument: req.file ? req.file.path : null, // safely handle file
     };
 
-    // Save ID document URL if uploaded
-    if (req.file && req.file.path) {
-      userData.idDocument = req.file.path; // Cloudinary URL
-    }
-
     const user = await User.create(userData);
+
+    const token = generateToken(user._id, user.role);
+
+    console.log("✅ Signup success for:", user.email);
 
     res.status(201).json({
       message: "Signup successful",
@@ -48,41 +64,54 @@ exports.signup = async (req, res) => {
         role: user.role,
         idDocument: user.idDocument || null,
       },
-      token: generateToken(user._id, user.role),
+      token,
     });
   } catch (err) {
+    console.error("❌ [SIGNUP ERROR]:", err.message);
+    console.error(err.stack);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
 // @desc Login user
 // @route POST /api/auth/login
 exports.login = async (req, res) => {
+  console.log("🟨 [LOGIN] Incoming request...");
+  console.log("Body:", req.body);
+
   try {
     const { emailOrPhone, password } = req.body;
 
-    // find user by email or phone
+    if (!emailOrPhone || !password) {
+      console.warn("⚠️ Missing login fields");
+      return res.status(400).json({ message: "Please provide email/phone and password" });
+    }
+
     const user = await User.findOne({
       $or: [{ email: emailOrPhone }, { phone: emailOrPhone }],
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) {
+      console.warn("⚠️ User not found:", emailOrPhone);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-    // check password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      console.warn("⚠️ Invalid password for:", emailOrPhone);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-     // generate JWT
     const token = generateToken(user._id, user.role);
 
-    // set token in cookie
     res.cookie("token", token, {
-      httpOnly: true, // prevents client-side JS access
-      secure: false,  // set true in production (HTTPS)
-      sameSite: "lax", // adjust if cross-site frontend
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
+
+    console.log("✅ Login success for:", user.email);
 
     res.status(200).json({
       message: "Login successful",
@@ -92,9 +121,11 @@ exports.login = async (req, res) => {
         email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id, user.role),
+      token,
     });
   } catch (err) {
+    console.error("❌ [LOGIN ERROR]:", err.message);
+    console.error(err.stack);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
