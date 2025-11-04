@@ -229,3 +229,36 @@ exports.resetPassword = async (req, res) => {
     res.status(400).json({ message: "Invalid or expired token", error: error.message });
   }
 };
+
+exports.adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+    // ensure only admins can log in here
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied: not an admin" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+    const token = generateToken(user._id, user.role);
+
+    res.status(200).json({
+      message: "Admin login successful",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("❌ Admin Login Error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
