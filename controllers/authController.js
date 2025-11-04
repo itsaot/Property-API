@@ -12,31 +12,22 @@ const generateToken = (id, role) => {
 // @desc Signup user (tenant / landlord)
 // @route POST /api/auth/signup
 exports.signup = async (req, res) => {
-  console.log("🟦 [SIGNUP] Incoming request...");
-
-  // Log all important incoming data for debugging
-  console.log("Headers:", req.headers);
-  console.log("Body:", req.body);
-  console.log("File received:", req.file ? req.file.originalname : "❌ No file uploaded");
-
   try {
-    const { fullName, email, phone, password, role } = req.body;
+    console.log("🟦 [SIGNUP] Incoming request...");
+    console.log("Body:", req.body);
+    console.log("File received:", req.file?.originalname || "None");
 
-    if (!fullName || !email || !phone || !password || !role) {
-      console.warn("⚠️ Missing required fields:", { fullName, email, phone, password, role });
-      return res.status(400).json({ message: "All fields are required" });
-    }
+    const { firstName, lastName, email, phone, password, role } = req.body;
+
+    // Combine names to match your schema
+    const fullName = `${firstName || ""} ${lastName || ""}`.trim();
 
     if (!["tenant", "landlord"].includes(role)) {
-      console.warn("⚠️ Invalid role:", role);
       return res.status(400).json({ message: "Invalid role" });
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
-    if (existingUser) {
-      console.warn("⚠️ User already exists:", { email, phone });
-      return res.status(400).json({ message: "User already exists" });
-    }
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -46,14 +37,13 @@ exports.signup = async (req, res) => {
       phone,
       password: hashedPassword,
       role,
-      idDocument: req.file ? req.file.path : null, // safely handle file
     };
 
+    if (req.file && req.file.path) {
+      userData.idDocument = req.file.path;
+    }
+
     const user = await User.create(userData);
-
-    const token = generateToken(user._id, user.role);
-
-    console.log("✅ Signup success for:", user.email);
 
     res.status(201).json({
       message: "Signup successful",
@@ -64,14 +54,14 @@ exports.signup = async (req, res) => {
         role: user.role,
         idDocument: user.idDocument || null,
       },
-      token,
+      token: generateToken(user._id, user.role),
     });
   } catch (err) {
-    console.error("❌ [SIGNUP ERROR]:", err.message);
-    console.error(err.stack);
+    console.error("❌ Signup Error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // @desc Login user
 // @route POST /api/auth/login
