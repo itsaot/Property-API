@@ -69,56 +69,53 @@ exports.login = async (req, res) => {
   console.log("🟨 [LOGIN] Incoming request...");
   console.log("Body:", req.body);
 
+  const { emailOrPhone, password } = req.body;
+
+  // Identify exactly what’s missing
+  const missingFields = [];
+  if (!emailOrPhone) missingFields.push("emailOrPhone");
+  if (!password) missingFields.push("password");
+
+  if (missingFields.length > 0) {
+    console.warn(`⚠️ Missing login fields: ${missingFields.join(", ")}`);
+    return res.status(400).json({
+      success: false,
+      message: `Missing fields: ${missingFields.join(", ")}`
+    });
+  }
+
   try {
-    const { emailOrPhone, password } = req.body;
-
-    if (!emailOrPhone || !password) {
-      console.warn("⚠️ Missing login fields");
-      return res.status(400).json({ message: "Please provide email/phone and password" });
-    }
-
+    // Continue your login logic below...
     const user = await User.findOne({
       $or: [{ email: emailOrPhone }, { phone: emailOrPhone }],
     });
 
     if (!user) {
-      console.warn("⚠️ User not found:", emailOrPhone);
-      return res.status(400).json({ message: "Invalid credentials" });
+      console.warn("⚠️ User not found for:", emailOrPhone);
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.warn("⚠️ Invalid password for:", emailOrPhone);
-      return res.status(400).json({ message: "Invalid credentials" });
+      console.warn("⚠️ Incorrect password for:", emailOrPhone);
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const token = generateToken(user._id, user.role);
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    });
+    console.log(`✅ Login successful for ${emailOrPhone}`);
 
-    console.log("✅ Login success for:", user.email);
-
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: "Login successful",
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-      },
-      token,
+      data: { token, user },
     });
-  } catch (err) {
-    console.error("❌ [LOGIN ERROR]:", err.message);
-    console.error(err.stack);
-    res.status(500).json({ message: "Server error", error: err.message });
+  } catch (error) {
+    console.error("🔥 Login error:", error.message);
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
+
 
 exports.logout = async (req, res) => {
   try {
