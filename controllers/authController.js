@@ -69,50 +69,67 @@ exports.login = async (req, res) => {
   console.log("🟨 [LOGIN] Incoming request...");
   console.log("Body:", req.body);
 
-  const { emailOrPhone, password } = req.body;
-
-  // Identify exactly what’s missing
-  const missingFields = [];
-  if (!emailOrPhone) missingFields.push("emailOrPhone");
-  if (!password) missingFields.push("password");
-
-  if (missingFields.length > 0) {
-    console.warn(`⚠️ Missing login fields: ${missingFields.join(", ")}`);
-    return res.status(400).json({
-      success: false,
-      message: `Missing fields: ${missingFields.join(", ")}`
-    });
-  }
-
   try {
-    // Continue your login logic below...
+    // ✅ Accepts either { email, password } or { phone, password }
+    const { email, phone, password } = req.body;
+    const identifier = email || phone;
+
+    const missingFields = [];
+    if (!identifier) missingFields.push("email or phone");
+    if (!password) missingFields.push("password");
+
+    if (missingFields.length > 0) {
+      console.warn(`⚠️ Missing login fields: ${missingFields.join(", ")}`);
+      return res
+        .status(400)
+        .json({ message: `Missing fields: ${missingFields.join(", ")}` });
+    }
+
+    // ✅ Find user by either email or phone
     const user = await User.findOne({
-      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }],
+      $or: [{ email: identifier }, { phone: identifier }],
     });
 
     if (!user) {
-      console.warn("⚠️ User not found for:", emailOrPhone);
-      return res.status(404).json({ success: false, message: "User not found" });
+      console.warn("⚠️ User not found:", identifier);
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // ✅ Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.warn("⚠️ Incorrect password for:", emailOrPhone);
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      console.warn("⚠️ Invalid password for:", identifier);
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    // ✅ Generate token
+    const token = generateToken(user._id, user.role);
 
-    console.log(`✅ Login successful for ${emailOrPhone}`);
-
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: { token, user },
+    // ✅ Send token as cookie and in response
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-  } catch (error) {
-    console.error("🔥 Login error:", error.message);
-    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+
+    console.log("✅ Login success for:", user.email || user.phone);
+
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("❌ [LOGIN ERROR]:", err.message);
+    console.error(err.stack);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
