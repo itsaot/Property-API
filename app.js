@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const { connectDB } = require("./config/db");
 require("dotenv").config();
+const cors = require("cors");
 
 // Import routes
 const paymentRoutes = require("./routes/payment");
@@ -12,13 +13,14 @@ const messageRoutes = require("./routes/messageRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const rentalRoutes = require("./routes/rentalRoutes"); // rental listings
+
 const allowedOrigins = [
   "http://localhost:3000",
   "https://preview--rental-realm-link.lovable.app",
   "https://rental-realm-link.lovable.app",
   "https://preview--ramshelf-property-hub.lovable.app",
   "https://ramshelf.vercel.app",
-  "https://lovable.dev/projects/ac36ae5a-ab30-46d1-a46b-89973a406b9a"// optional: if your main site uses this domain
+  "https://lovable.dev/projects/ac36ae5a-ab30-46d1-a46b-89973a406b9a"
 ];
 
 // Connect to MongoDB
@@ -31,20 +33,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const cors = require("cors");
+// CORS middleware using cors package
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (Postman, curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: true,
+};
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH'); // include PATCH if used
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
+// Apply CORS globally
+app.use(cors(corsOptions));
+// Handle preflight requests for all routes
+app.options("*", cors(corsOptions));
 
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`🟨 [REQUEST] ${req.method} ${req.originalUrl} from ${req.headers.origin}`);
   if (req.headers.authorization) {
@@ -54,7 +63,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
 
 // Routes
 app.use("/api/payments", paymentRoutes);
