@@ -45,6 +45,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  console.log(`🟨 [REQUEST] ${req.method} ${req.originalUrl} from ${req.headers.origin}`);
+  if (req.headers.authorization) {
+    console.log(`🟨 [REQUEST] Authorization header present`);
+  } else {
+    console.log(`🟨 [REQUEST] No Authorization header`);
+  }
+  next();
+});
 
 
 // Routes
