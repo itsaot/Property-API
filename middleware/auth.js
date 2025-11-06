@@ -2,35 +2,25 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 exports.auth = async (req, res, next) => {
-  // Log the full headers for debugging
-  console.log('🔑 Incoming headers:', req.headers);
-   console.log('--- Auth Middleware ---');
-  console.log('Authorization header:', req.headers.authorization);
-
-
   let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
-    console.log('✅ Token extracted from header:', token.substring(0, 20) + '...');
-  } else {
-    console.warn('⚠️ No Bearer token found in Authorization header');
+  console.log('[AUTH] JWT_SECRET:', process.env.JWT_SECRET?.substring(0, 5), '...');
+
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
   }
 
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
-  }
+  console.log('[AUTH] Token received:', token ? token.substring(0, 20) + '...' : 'No token');
+
+  if (!token) return res.status(401).json({ message: "Not authorized, no token" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
-    console.log('✅ Token verified. User ID:', decoded.id);
+    console.log('[AUTH] Token decoded:', decoded);
+    req.user = await User.findById(decoded.id).select("-password");
     next();
   } catch (err) {
-    console.error('❌ Token verification failed:', err.message);
-    return res.status(401).json({ message: 'Token failed' });
+    console.error('[AUTH] Token verification failed:', err.message);
+    res.status(401).json({ message: "Token failed" });
   }
 };
 
