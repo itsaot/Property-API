@@ -4,6 +4,9 @@ const User = require("../models/User");
 exports.auth = async (req, res, next) => {
   // Log the full headers for debugging
   console.log('🔑 Incoming headers:', req.headers);
+   console.log('--- Auth Middleware ---');
+  console.log('Authorization header:', req.headers.authorization);
+
 
   let token;
   if (
