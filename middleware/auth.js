@@ -3,19 +3,20 @@ const User = require("../models/User");
 
 exports.auth = async (req, res, next) => {
   let token;
-  console.log('[AUTH] JWT_SECRET:', process.env.JWT_SECRET?.substring(0, 5), '...');
+
+  console.log('[AUTH] Authorization header:', req.headers.authorization);
 
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1];
   }
 
-  console.log('[AUTH] Token received:', token ? token.substring(0, 20) + '...' : 'No token');
+  console.log('[AUTH] Token extracted:', token);
 
   if (!token) return res.status(401).json({ message: "Not authorized, no token" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('[AUTH] Token decoded:', decoded);
+    console.log('[AUTH] Token verified successfully:', decoded);
     req.user = await User.findById(decoded.id).select("-password");
     next();
   } catch (err) {
@@ -23,6 +24,7 @@ exports.auth = async (req, res, next) => {
     res.status(401).json({ message: "Token failed" });
   }
 };
+
 
 
 exports.isAdmin = (req, res, next) => {
