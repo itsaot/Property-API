@@ -34,7 +34,6 @@ app.use(cookieParser());
 app.use(
   require("cors")({
     origin: function (origin, callback) {
-      // allow requests with no origin (like Postman or server-to-server)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -42,8 +41,11 @@ app.use(
       }
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'], // 👈 Add this line
+    methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'], // optional but recommended
   })
 );
+
 
 // Routes
 app.use("/api/payments", paymentRoutes);
