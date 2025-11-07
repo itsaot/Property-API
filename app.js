@@ -20,7 +20,8 @@ const allowedOrigins = [
   "https://rental-realm-link.lovable.app",
   "https://preview--ramshelf-property-hub.lovable.app",
   "https://ramshelf.vercel.app",
-  "https://lovable.dev/projects/ac36ae5a-ab30-46d1-a46b-89973a406b9a"
+  "https://lovable.dev/projects/ac36ae5a-ab30-46d1-a46b-89973a406b9a",
+  "https://preview--rentel-hub-finder.lovable.app/"
 ];
 
 // Connect to MongoDB
