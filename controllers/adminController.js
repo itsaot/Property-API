@@ -1,16 +1,14 @@
 const User = require("../models/User");
 const Review = require("../models/Review");
+const Rental = require("../models/Rental");
 const Notification = require("../models/Notification");
- 
 
-// @desc Get all flagged content
+// @desc Get all reviews flagged by users (if you implement flags later)
 // @route GET /api/admin/flags
+// Currently returns empty array since no Flag model exists
 exports.getFlaggedContent = async (req, res) => {
   try {
-    const flags = await Flag.find()
-      .populate("reporter", "fullName role")
-      .sort({ createdAt: -1 });
-    res.json(flags);
+    res.json([]); // placeholder until you implement flags
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -45,8 +43,8 @@ exports.updateUserStatus = async (req, res) => {
   }
 };
 
-// @desc Delete any post or review (moderator/admin)
-// @route DELETE /api/admin/content/:type/:id
+// @desc Delete a review
+// @route DELETE /api/admin/content/review/:id
 exports.deleteContent = async (req, res) => {
   try {
     const { type, id } = req.params;
@@ -75,22 +73,53 @@ exports.deleteContent = async (req, res) => {
   }
 };
 
-
-// @desc Get basic platform analytics
+// @desc Get platform analytics (users, reviews, rentals)
 // @route GET /api/admin/analytics
 exports.getAnalytics = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const totalPosts = await Post.countDocuments();
     const totalReviews = await Review.countDocuments();
-    const totalFlags = await Flag.countDocuments({ resolved: false });
+    const totalRentals = await Rental.countDocuments();
 
     res.json({
       totalUsers,
-      totalPosts,
       totalReviews,
-      unresolvedFlags: totalFlags,
+      totalRentals,
     });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// @desc Get all rentals (admin view)
+// @route GET /api/admin/rentals
+exports.getAllRentals = async (req, res) => {
+  try {
+    const rentals = await Rental.find().populate("owner", "fullName email");
+    res.json(rentals);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// @desc Delete a rental
+// @route DELETE /api/admin/rentals/:id
+exports.deleteRental = async (req, res) => {
+  try {
+    const rental = await Rental.findById(req.params.id);
+    if (!rental) return res.status(404).json({ message: "Rental not found" });
+
+    await Rental.findByIdAndDelete(req.params.id);
+
+    await Notification.create({
+      user: rental.owner,
+      fromUser: req.user._id,
+      type: "admin",
+      message: `Your property listing was removed by an admin.`,
+      link: "/account/properties",
+    });
+
+    res.json({ message: "Rental deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
