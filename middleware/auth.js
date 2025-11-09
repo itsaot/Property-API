@@ -3,15 +3,14 @@ const User = require("../models/User");
 
 exports.auth = async (req, res, next) => {
   let token;
+
   console.log('[AUTH] Authorization header:', req.headers.authorization);
 
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1].trim();
   }
 
-  console.log('[AUTH] Token extracted:', token);
-
-  if (!token) return res.status(401).json({ message: "Not authorized, no token" });
+  if (!token) return res.status(401).json({ message: "No token provided" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -20,34 +19,6 @@ exports.auth = async (req, res, next) => {
     next();
   } catch (err) {
     console.error('[AUTH] Token verification failed:', err.message);
-    res.status(401).json({ message: "Token failed", error: err.message });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
-};
-
-
-
-exports.isAdmin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    res.status(403).json({ message: "Admin access only" });
-  }
-};
-
-
-exports.auth = (req, res, next) => {
-  const token = req.cookies.token; // 👈 get token from cookies
-  if (!token) return res.status(401).json({ message: "No token provided" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
-exports.logout = (req, res) => {
-  res.clearCookie("token");
-  res.json({ message: "Logged out" });
 };
