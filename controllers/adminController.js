@@ -51,38 +51,26 @@ exports.updateUserStatus = async (req, res) => {
 exports.deleteContent = async (req, res) => {
   try {
     const { type, id } = req.params;
-    if (!["post", "review"].includes(type)) {
+
+    if (type !== "review") {
       return res.status(400).json({ message: "Invalid content type" });
     }
 
-    let ownerId;
+    const review = await Review.findById(id);
+    if (!review) return res.status(404).json({ message: "Review not found" });
 
-    if (type === "post") {
-      const post = await Post.findById(id);
-      if (!post) return res.status(404).json({ message: "Post not found" });
-      ownerId = post.author;
-      await Post.findByIdAndDelete(id);
-    }
+    const ownerId = review.reviewee;
+    await Review.findByIdAndDelete(id);
 
-    if (type === "review") {
-      const review = await Review.findById(id);
-      if (!review) return res.status(404).json({ message: "Review not found" });
-      ownerId = review.reviewee;
-      await Review.findByIdAndDelete(id);
-    }
+    await Notification.create({
+      user: ownerId,
+      fromUser: req.user._id,
+      type: "admin",
+      message: `Your review was removed by an admin.`,
+      link: `/account/reviews`,
+    });
 
-    // 🔔 Notify content owner
-    if (ownerId) {
-      await Notification.create({
-        user: ownerId,
-        fromUser: req.user._id,
-        type: "admin",
-        message: `Your ${type} was removed by an admin.`,
-        link: `/account/reviews`,
-      });
-    }
-
-    res.json({ message: `${type} deleted successfully` });
+    res.json({ message: "Review deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
