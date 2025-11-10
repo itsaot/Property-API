@@ -9,6 +9,15 @@ const {
   deleteRental,
 } = require("../controllers/adminController");
 const { auth, isAdmin } = require("../middleware/auth");
+console.log("Admin controller functions check:");
+console.log({
+  getFlaggedContent,
+  updateUserStatus,
+  deleteContent,
+  getAnalytics,
+  getAllRentals,
+  deleteRental,
+});
 
 // Protected admin routes
 router.get("/flags", auth, isAdmin, getFlaggedContent);
