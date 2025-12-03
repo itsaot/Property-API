@@ -39,7 +39,21 @@ exports.createRental = async (req, res) => {
       return res.status(403).json({ message: "Only landlords can add rentals" });
     }
 
-    const { title, description, address, price, images, mapUrl } = req.body;
+    const {
+      title,
+      description,
+      address,
+      price,
+      images,
+      mapUrl,
+      bedrooms,
+      bathrooms,
+      garageSpaces,
+      parkingSpaces,
+      furnished,
+      petFriendly,
+      available 
+    } = req.body;
 
     const rental = await Rental.create({
       landlord: req.user._id,
@@ -47,15 +61,15 @@ exports.createRental = async (req, res) => {
       description,
       address,
       price,
-      available,
       images,
-      mapUrl, // store the manual Google Maps URL
+      mapUrl,
       bedrooms,
-  bathrooms,
-  garageSpaces,
-  parkingSpaces,
-  furnished,
-  petFriendly
+      bathrooms,
+      garageSpaces,
+      parkingSpaces,
+      furnished,
+      petFriendly,
+      available: available ?? true 
     });
 
     // push rental to landlord's property list
@@ -65,9 +79,11 @@ exports.createRental = async (req, res) => {
 
     res.status(201).json({ message: "Rental created successfully", rental });
   } catch (err) {
+    console.error("Create Rental Error:", err); // log the full error for debugging
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 
 // @desc Update rental
@@ -81,7 +97,21 @@ exports.updateRental = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this rental" });
     }
 
-    const { title, description, address, price, available, images, mapUrl } = req.body;
+    const {
+      title,
+      description,
+      address,
+      price,
+      available,
+      images,
+      mapUrl,
+      bedrooms,
+      bathrooms,
+      garageSpaces,
+      parkingSpaces,
+      furnished,
+      petFriendly
+    } = req.body;
 
     rental.title = title || rental.title;
     rental.description = description || rental.description;
@@ -89,19 +119,19 @@ exports.updateRental = async (req, res) => {
     rental.price = price || rental.price;
     rental.available = available ?? rental.available;
     rental.images = images || rental.images;
-    rental.mapUrl = mapUrl || rental.mapUrl; // update map URL
+    rental.mapUrl = mapUrl || rental.mapUrl;
     rental.bedrooms = bedrooms ?? rental.bedrooms;
-rental.bathrooms = bathrooms ?? rental.bathrooms;
-rental.garageSpaces = garageSpaces ?? rental.garageSpaces;
-rental.parkingSpaces = parkingSpaces ?? rental.parkingSpaces;
-rental.furnished = furnished ?? rental.furnished;
-rental.petFriendly = petFriendly ?? rental.petFriendly;
-
+    rental.bathrooms = bathrooms ?? rental.bathrooms;
+    rental.garageSpaces = garageSpaces ?? rental.garageSpaces;
+    rental.parkingSpaces = parkingSpaces ?? rental.parkingSpaces;
+    rental.furnished = furnished ?? rental.furnished;
+    rental.petFriendly = petFriendly ?? rental.petFriendly;
 
     await rental.save();
 
     res.json({ message: "Rental updated successfully", rental });
   } catch (err) {
+    console.error("Update Rental Error:", err); // <-- log the exact error
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
