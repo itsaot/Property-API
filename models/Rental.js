@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose"); // <-- make sure this line is at the top
 
 const rentalSchema = new mongoose.Schema({
   landlord: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -7,13 +7,19 @@ const rentalSchema = new mongoose.Schema({
   address: { type: String, required: true },
   price: { type: Number, required: true },
   images: [String],
-  mapUrl: String, // <-- new field for manual Google Maps URL
-
+  mapUrl: String, // manual Google Maps URL
   available: { type: Boolean, default: true },
-
   tenants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  flagged: { type: Boolean, default: false },
 
-  flagged: { type: Boolean, default: false }
+  // New features
+  bedrooms: { type: Number, default: 1 },
+  bathrooms: { type: Number, default: 1 },
+  garageSpaces: { type: Number, default: 0 },
+  parkingSpaces: { type: Number, default: 0 },
+  furnished: { type: Boolean, default: false },
+  petFriendly: { type: Boolean, default: false }
+
 }, { timestamps: true });
 
 // Virtual: number of tenants

@@ -47,8 +47,15 @@ exports.createRental = async (req, res) => {
       description,
       address,
       price,
+      available,
       images,
       mapUrl, // store the manual Google Maps URL
+      bedrooms,
+  bathrooms,
+  garageSpaces,
+  parkingSpaces,
+  furnished,
+  petFriendly
     });
 
     // push rental to landlord's property list
@@ -83,6 +90,13 @@ exports.updateRental = async (req, res) => {
     rental.available = available ?? rental.available;
     rental.images = images || rental.images;
     rental.mapUrl = mapUrl || rental.mapUrl; // update map URL
+    rental.bedrooms = bedrooms ?? rental.bedrooms;
+rental.bathrooms = bathrooms ?? rental.bathrooms;
+rental.garageSpaces = garageSpaces ?? rental.garageSpaces;
+rental.parkingSpaces = parkingSpaces ?? rental.parkingSpaces;
+rental.furnished = furnished ?? rental.furnished;
+rental.petFriendly = petFriendly ?? rental.petFriendly;
+
 
     await rental.save();
 
