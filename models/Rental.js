@@ -7,6 +7,7 @@ const rentalSchema = new mongoose.Schema({
   address: { type: String, required: true },
   price: { type: Number, required: true },
   images: [String],
+  mapUrl: String, // <-- new field for manual Google Maps URL
 
   available: { type: Boolean, default: true },
 

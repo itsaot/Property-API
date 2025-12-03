@@ -39,7 +39,7 @@ exports.createRental = async (req, res) => {
       return res.status(403).json({ message: "Only landlords can add rentals" });
     }
 
-    const { title, description, address, price, images } = req.body;
+    const { title, description, address, price, images, mapUrl } = req.body;
 
     const rental = await Rental.create({
       landlord: req.user._id,
@@ -48,6 +48,7 @@ exports.createRental = async (req, res) => {
       address,
       price,
       images,
+      mapUrl, // store the manual Google Maps URL
     });
 
     // push rental to landlord's property list
@@ -61,6 +62,7 @@ exports.createRental = async (req, res) => {
   }
 };
 
+
 // @desc Update rental
 // @route PUT /api/rentals/:id
 exports.updateRental = async (req, res) => {
@@ -72,7 +74,7 @@ exports.updateRental = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this rental" });
     }
 
-    const { title, description, address, price, available, images } = req.body;
+    const { title, description, address, price, available, images, mapUrl } = req.body;
 
     rental.title = title || rental.title;
     rental.description = description || rental.description;
@@ -80,6 +82,7 @@ exports.updateRental = async (req, res) => {
     rental.price = price || rental.price;
     rental.available = available ?? rental.available;
     rental.images = images || rental.images;
+    rental.mapUrl = mapUrl || rental.mapUrl; // update map URL
 
     await rental.save();
 
@@ -88,6 +91,7 @@ exports.updateRental = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // @desc Delete rental
 // @route DELETE /api/rentals/:id
