@@ -1,19 +1,28 @@
 const express = require("express");
 const router = express.Router();
 const {
-  getRentals,
+  getPublicRentals,
+  getMyRentals,
+  searchRentals,
   getRentalById,
   createRental,
   updateRental,
-  deleteRental,
+  deleteRental
 } = require("../controllers/rentalController");
 const { auth } = require("../middleware/auth");
 
-// public
-router.get("/", getRentals);
-router.get("/:id", getRentalById);
+// ----------------------
+// PUBLIC ROUTES
+// ----------------------
+router.get("/public", getPublicRentals);
 
-// protected
+// ----------------------
+// PROTECTED ROUTES
+// ----------------------
+router.get("/my", auth, getMyRentals);
+router.get("/search", auth, searchRentals);
+router.get("/:id", auth, getRentalById);
+
 router.post("/", auth, createRental);
 router.put("/:id", auth, updateRental);
 router.delete("/:id", auth, deleteRental);

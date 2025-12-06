@@ -1,13 +1,13 @@
 const Rental = require("../models/Rental");
 const User = require("../models/User");
 
-// @desc Get all rentals
-// @route GET /api/rentals
-exports.getRentals = async (req, res) => {
+// ----------------------
+// PUBLIC LISTINGS
+// ----------------------
+exports.getPublicRentals = async (req, res) => {
   try {
-    const rentals = await Rental.find()
-      .populate("landlord", "fullName profilePhoto")
-      .populate("tenants", "fullName profilePhoto");
+    const rentals = await Rental.find({ available: true })
+      .populate("landlord", "fullName profilePhoto");
 
     res.json(rentals);
   } catch (err) {
@@ -15,8 +15,54 @@ exports.getRentals = async (req, res) => {
   }
 };
 
-// @desc Get single rental by ID
-// @route GET /api/rentals/:id
+// ----------------------
+// LANDLORD PRIVATE LISTINGS
+// ----------------------
+exports.getMyRentals = async (req, res) => {
+  try {
+    if (req.user.role !== "landlord") {
+      return res.status(403).json({ message: "Only landlords can view their rentals" });
+    }
+
+    const rentals = await Rental.find({ landlord: req.user._id })
+      .populate("tenants", "fullName profilePhoto")
+      .populate("landlord", "fullName profilePhoto");
+
+    res.json(rentals);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// ----------------------
+// SEARCH (LANDLORD-ONLY)
+// ----------------------
+exports.searchRentals = async (req, res) => {
+  try {
+    const q = req.query.q || "";
+
+    if (req.user.role !== "landlord") {
+      return res.status(403).json({ message: "Only landlords can search their rentals" });
+    }
+
+    const rentals = await Rental.find({
+      landlord: req.user._id,
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { address: { $regex: q, $options: "i" } }
+      ]
+    }).populate("landlord", "fullName profilePhoto");
+
+    res.json(rentals);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// ----------------------
+// GET SINGLE RENTAL
+// ----------------------
 exports.getRentalById = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id)
@@ -25,14 +71,24 @@ exports.getRentalById = async (req, res) => {
 
     if (!rental) return res.status(404).json({ message: "Rental not found" });
 
+    const userId = req.user.id;
+    const isLandlord = rental.landlord._id.toString() === userId;
+    const isTenant = rental.tenants.map(t => t._id.toString()).includes(userId);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isLandlord && !isTenant && !isAdmin) {
+      return res.status(403).json({ message: "Not allowed to view this rental" });
+    }
+
     res.json(rental);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// @desc Create a new rental (landlords only)
-// @route POST /api/rentals
+// ----------------------
+// CREATE RENTAL
+// ----------------------
 exports.createRental = async (req, res) => {
   try {
     if (req.user.role !== "landlord") {
@@ -69,7 +125,7 @@ exports.createRental = async (req, res) => {
       parkingSpaces,
       furnished,
       petFriendly,
-      available: available ?? true 
+      available: available ?? true
     });
 
     // push rental to landlord's property list
@@ -79,15 +135,14 @@ exports.createRental = async (req, res) => {
 
     res.status(201).json({ message: "Rental created successfully", rental });
   } catch (err) {
-    console.error("Create Rental Error:", err); // log the full error for debugging
+    console.error("Create Rental Error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
-
-// @desc Update rental
-// @route PUT /api/rentals/:id
+// ----------------------
+// UPDATE RENTAL
+// ----------------------
 exports.updateRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id);
@@ -131,14 +186,14 @@ exports.updateRental = async (req, res) => {
 
     res.json({ message: "Rental updated successfully", rental });
   } catch (err) {
-    console.error("Update Rental Error:", err); // <-- log the exact error
+    console.error("Update Rental Error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
-// @desc Delete rental
-// @route DELETE /api/rentals/:id
+// ----------------------
+// DELETE RENTAL
+// ----------------------
 exports.deleteRental = async (req, res) => {
   try {
     const rental = await Rental.findById(req.params.id);
@@ -150,7 +205,6 @@ exports.deleteRental = async (req, res) => {
 
     await rental.deleteOne();
 
-    // remove rental from landlord properties
     await User.findByIdAndUpdate(req.user._id, {
       $pull: { properties: rental._id },
     });
