@@ -20,19 +20,13 @@ router.get("/public", getPublicRentals); // public homepage listings
 // ----------------------
 // PROTECTED ROUTES
 // ----------------------
-// Get all rentals visible to logged-in user
-router.get("/", auth, getRentals);
+router.get("/", auth, getRentals);        // all visible rentals for logged-in user
+router.get("/my", auth, getMyRentals);    // landlord's own rentals
+router.get("/search", auth, searchRentals); // landlord search
 
-// Get rentals owned by logged-in landlord
-router.get("/my", auth, getMyRentals);
+router.get("/:id", auth, getRentalById); // single rental (only landlord/tenant/admin)
 
-// Search ONLY in landlord's own rentals
-router.get("/search", auth, searchRentals);
-
-// Get a single rental by ID (only landlord, tenant, or admin)
-router.get("/:id", auth, getRentalById);
-
-// Create, Update, Delete rentals (landlord only)
+// CRUD routes
 router.post("/", auth, createRental);
 router.put("/:id", auth, updateRental);
 router.delete("/:id", auth, deleteRental);

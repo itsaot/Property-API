@@ -35,6 +35,34 @@ exports.getMyRentals = async (req, res) => {
 };
 
 // ----------------------
+// ALL RENTALS (protected)
+// ----------------------
+exports.getRentals = async (req, res) => {
+  try {
+    const filter = {};
+
+    if (req.user.role === "landlord") {
+      filter.landlord = req.user._id; // only own rentals
+    }
+
+    if (req.user.role === "tenant") {
+      filter.available = true; // tenants see only available rentals
+    }
+
+    // Admin sees everything (no filter)
+
+    const rentals = await Rental.find(filter)
+      .populate("landlord", "fullName profilePhoto")
+      .populate("tenants", "fullName profilePhoto");
+
+    res.json(rentals);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+
+// ----------------------
 // SEARCH (LANDLORD-ONLY)
 // ----------------------
 exports.searchRentals = async (req, res) => {
