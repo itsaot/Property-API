@@ -99,20 +99,14 @@ exports.getRentalById = async (req, res) => {
 
     if (!rental) return res.status(404).json({ message: "Rental not found" });
 
-    const userId = req.user.id;
-    const isLandlord = rental.landlord._id.toString() === userId;
-    const isTenant = rental.tenants.map(t => t._id.toString()).includes(userId);
-    const isAdmin = req.user.role === "admin";
-
-    if (!isLandlord && !isTenant && !isAdmin) {
-      return res.status(403).json({ message: "Not allowed to view this rental" });
-    }
-
+    // Anyone logged in can view
     res.json(rental);
+
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // ----------------------
 // CREATE RENTAL
