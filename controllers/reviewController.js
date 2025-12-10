@@ -1,4 +1,5 @@
 const Review = require("../models/Review");
+const Rental = require("../models/Rental");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 
@@ -115,6 +116,52 @@ exports.deleteReview = async (req, res) => {
     });
 
     res.json({ message: "Review deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+// GET all reviews for a rental
+// GET /api/reviews/rental/:rentalId
+exports.getRentalReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ rental: req.params.rentalId })
+      .populate("reviewer", "fullName profilePhoto")
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// POST a review for a rental
+// POST /api/reviews/rental/:rentalId
+exports.leaveRentalReview = async (req, res) => {
+  try {
+    const { rating, text } = req.body;
+
+    if (!rating) return res.status(400).json({ message: "Rating is required" });
+
+    const review = await Review.create({
+      reviewer: req.user._id,
+      rental: req.params.rentalId,
+      rating,
+      text
+    });
+
+    // Optional: Notify landlord
+    const rental = await Rental.findById(req.params.rentalId);
+    if (rental) {
+      await Notification.create({
+        user: rental.landlord,
+        fromUser: req.user._id,
+        type: "review",
+        message: `Your rental "${rental.title}" received a new review from ${req.user.fullName}`,
+        link: `/rentals/${rental._id}`
+      });
+    }
+
+    res.status(201).json({ message: "Review created", data: review });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
