@@ -90,13 +90,14 @@ exports.getAnalytics = async (req, res) => {
 exports.getAllRentals = async (req, res) => {
   try {
     const rentals = await Rental.find()
-      .populate("owner", "fullName email")
+      .populate("landlord", "fullName email") // ✅ correct field name
       .sort({ createdAt: -1 });
     res.json(rentals);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // ✅ Delete rental
 exports.deleteRental = async (req, res) => {
@@ -106,6 +107,14 @@ exports.deleteRental = async (req, res) => {
 
     await rental.deleteOne();
     res.json({ message: "Rental deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
