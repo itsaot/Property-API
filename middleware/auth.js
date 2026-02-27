@@ -1,51 +1,44 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// ✅ Authenticate user with JWT
-exports.auth = async (req, res, next) => {
+// Protect routes – only authenticated users
+exports.protect = async (req, res, next) => {
   let token;
 
-  console.log("[AUTH] Authorization header:", req.headers.authorization);
-
-  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1].trim();
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies.token) {
+    token = req.cookies.token;
   }
 
   if (!token) {
-    return res.status(401).json({ message: "No token provided" });
+    return res.status(401).json({ message: "Not authorized, token missing" });
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("[AUTH] Token verified successfully:", decoded);
-
-    // Attach user to request (excluding password)
     req.user = await User.findById(decoded.id).select("-password");
-
-    if (!req.user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
     next();
   } catch (err) {
-    console.error("[AUTH] Token verification failed:", err.message);
-    res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: "Not authorized, token invalid" });
   }
 };
 
-// ✅ Check if authenticated user is admin
-exports.isAdmin = (req, res, next) => {
-  if (!req.user) {
-    console.warn("[ADMIN CHECK] No authenticated user found");
-    return res.status(401).json({ message: "Not authenticated" });
+// Admin-only access
+exports.admin = (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admin access required" });
   }
+  next();
+};
 
-  if (req.user.role !== "admin") {
-    console.warn(`[ADMIN CHECK] Access denied. User role: ${req.user.role}`);
-    return res.status(403).json({ message: "Access denied. Admins only." });
+// Subscription check middleware
+exports.hasSubscription = (req, res, next) => {
+  if (!req.user || !req.user.subscription || !req.user.subscription.active) {
+    return res.status(403).json({ message: "Subscription required to access this feature" });
   }
-
-  console.log(`[ADMIN CHECK] Access granted to admin: ${req.user.email}`);
   next();
 };

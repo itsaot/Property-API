@@ -1,12 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const paymentController = require('../controllers/paymentController');
+const { protect, admin } = require("../middleware/authMiddleware");
+const { makePayment, getPayments } = require("../controllers/paymentController");
 
-// Offline / manual payments
-router.post('/', paymentController.createPayment);
+// Make a payment (tenant only)
+router.post("/", protect, makePayment);
 
-// Paystack integration
-router.post('/paystack/initialize', paymentController.initializePaystackPayment);
-router.get('/paystack/verify/:reference', paymentController.verifyPaystackPayment);
+// Get payments (tenant sees own, admin sees all)
+router.get("/", protect, getPayments);
 
 module.exports = router;
