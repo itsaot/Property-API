@@ -1,19 +1,29 @@
+require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const { connectDB } = require("./config/db");
-require("dotenv").config();
 const cors = require("cors");
+const { connectDB } = require("./config/db");
 
-// Import routes
-const paymentRoutes = require("./routes/payment");
+// Middleware
+const errorHandler = require("./middleware/errorHandler");
+const { protect, admin, hasSubscription } = require("./middleware/auth");
+
+// Routes
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const paymentRoutes = require("./routes/payment");
 const reviewRoutes = require("./routes/reviewRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const rentalRoutes = require("./routes/rentalRoutes"); // rental listings
+const rentalRoutes = require("./routes/rentalRoutes");
 
+// Connect to MongoDB
+connectDB();
+
+const app = express();
+
+// CORS configuration
 const allowedOrigins = [
   "http://localhost:3000",
   "https://preview--rental-realm-link.lovable.app",
@@ -24,68 +34,58 @@ const allowedOrigins = [
   "https://preview--rentel-hub-finder.lovable.app/"
 ];
 
-// Connect to MongoDB
-connectDB();
-
-const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// CORS middleware using cors package
-const corsOptions = {
-  origin: function (origin, callback) {
-    // allow requests with no origin (Postman, curl)
+app.use(cors({
+  origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
   credentials: true,
-};
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.options("*", cors());
 
-// Apply CORS globally
-app.use(cors(corsOptions));
-// Handle preflight requests for all routes
-app.options("*", cors(corsOptions));
+// Body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`🟨 [REQUEST] ${req.method} ${req.originalUrl} from ${req.headers.origin}`);
-  if (req.headers.authorization) {
-    console.log(`🟨 [REQUEST] Authorization header present`);
-  } else {
-    console.log(`🟨 [REQUEST] No Authorization header`);
-  }
+  console.log(`🟨 [REQUEST] ${req.method} ${req.originalUrl} from ${req.headers.origin || "unknown origin"}`);
   next();
 });
 
-// Routes
-app.use("/api/payments", paymentRoutes);
+// Public Routes (no auth required)
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/rentals", rentalRoutes);
+app.use("/api/payments", paymentRoutes);
+
+// Protected Routes (auth required)
+app.use("/api/users", protect, userRoutes);
+app.use("/api/reviews", protect, reviewRoutes);
+app.use("/api/messages", protect, messageRoutes);
+app.use("/api/notifications", protect, notificationRoutes);
+app.use("/api/rentals", protect, rentalRoutes);
+
+// Subscription-only routes (example: premium features)
+app.use("/api/premium", protect, hasSubscription, require("./routes/premiumRoutes"));
+
+// Admin-only routes
+app.use("/api/admin", protect, admin, adminRoutes);
 
 // Default route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Server error", error: err.message });
-});
+// Global error handler
+app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🟢 Server running on port ${PORT}`);
+});
