@@ -4,6 +4,9 @@ const { signup, login,logout, getMe, profileSetup, forgotPassword, resetPassword
 const { auth } = require("../middleware/auth");
 const upload = require("../utils/fileUpload");
 
+const authController = require("../controllers/authController");
+console.log("AUTH CONTROLLER:", authController);
+
 router.post("/signup", upload.single("idDocument"), signup);
 router.post("/login", login);
 router.post("/logout", auth, logout);
