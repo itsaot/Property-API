@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/upload");
-const { getUserProfile, uploadProfilePicture, updateProfile, searchUsers, updateSettings } = require("../controllers/userController");
+const upload = require("../utils/fileUpload"); // profile picture
 const { protect } = require("../middleware/auth");
 
-router.get("/search", protect, searchUsers);
-router.get("/:id", protect, getUserProfile);
-router.put("/:id", protect, updateProfile);
-router.put("/:id/settings", protect, updateSettings);
-router.post("/upload-profile", upload.single("image"), uploadProfilePicture);
+const authController = require("../controllers/authController");
+
+// Profile routes
+router.get("/me", protect, authController.getMe);
+router.put("/setup", protect, authController.profileSetup);
+router.post("/upload-profile", protect, upload.single("image"), authController.profileSetup); // or a separate handler if you want
 
 module.exports = router;
