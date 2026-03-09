@@ -1,34 +1,28 @@
 const express = require("express");
 const router = express.Router();
-const {
-  getRentals,
-  getPublicRentals,
-  getMyRentals,
-  searchRentals,
-  getRentalById,
-  createRental,
-  updateRental,
-  deleteRental
-} = require("../controllers/rentalController");
-const { protect } = require("../middleware/auth");
+const { protect, hasSubscription } = require("../middleware/auth");
+const rentalController = require("../controllers/rentalController");
 
 // ----------------------
-// PUBLIC ROUTES
+// PREMIUM RENTALS ROUTES
 // ----------------------
-router.get("/public", getPublicRentals); // public homepage listings
 
-// ----------------------
-// PROTECTED ROUTES
-// ----------------------
-router.get("/", protect, getRentals);        // all visible rentals for logged-in user
-router.get("/my", protect, getMyRentals);    // landlord's own rentals
-router.get("/search", protect, searchRentals); // landlord search
+// Example: Get all available premium rentals
+router.get("/rentals/premium", protect, hasSubscription, rentalController.getPublicRentals);
 
-router.get("/:id", protect, getRentalById); // single rental (only landlord/tenant/admin)
+// Example: Premium search (only for subscribed tenants)
+router.get("/rentals/premium/search", protect, hasSubscription, rentalController.searchRentals);
 
-// CRUD routes
-router.post("/", protect, createRental);
-router.put("/:id", protect, updateRental);
-router.delete("/:id", protect, deleteRental);
+// Example: Get single premium rental (protected)
+router.get("/rentals/premium/:id", protect, hasSubscription, rentalController.getRentalById);
+
+// Example: Create a rental (if your premium feature allows landlords to create exclusive listings)
+router.post("/rentals/premium", protect, hasSubscription, rentalController.createRental);
+
+// Example: Update a premium rental
+router.put("/rentals/premium/:id", protect, hasSubscription, rentalController.updateRental);
+
+// Example: Delete a premium rental
+router.delete("/rentals/premium/:id", protect, hasSubscription, rentalController.deleteRental);
 
 module.exports = router;
