@@ -6,14 +6,14 @@ const {
   deleteNotification,
   createNotification,
 } = require("../controllers/notificationController");
-const { auth } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 // Protected routes
-router.get("/", auth, getNotifications);
-router.patch("/:id/read", auth, markAsRead);
-router.delete("/:id", auth, deleteNotification);
+router.get("/", protect, getNotifications);
+router.patch("/:id/read", protect, markAsRead);
+router.delete("/:id", protect, deleteNotification);
 
 // Admin or system events can trigger this
-router.post("/create", auth, createNotification);
+router.post("/create", protect, createNotification);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Subscription = require("../models/Subscription"); // Add this
 
 // Protect routes – only authenticated users
 exports.protect = async (req, res, next) => {
@@ -35,10 +36,28 @@ exports.admin = (req, res, next) => {
   next();
 };
 
-// Subscription check middleware
-exports.hasSubscription = (req, res, next) => {
-  if (!req.user || !req.user.subscription || !req.user.subscription.active) {
-    return res.status(403).json({ message: "Subscription required to access this feature" });
+// Subscription check middleware – now checks DB for active subscription
+exports.hasSubscription = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const subscription = await Subscription.findOne({
+      user: req.user._id,
+      status: "active",
+      endDate: { $gte: new Date() },
+    });
+
+    if (!subscription) {
+      return res.status(403).json({
+        message: "Active subscription required to access this feature",
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error("❌ Subscription check error:", err);
+    res.status(500).json({ message: "Server error" });
   }
-  next();
 };

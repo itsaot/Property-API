@@ -3,18 +3,18 @@ const router = express.Router();
 const upload = require("../utils/fileUpload"); // Cloudinary/multer setup
 const { protect } = require("../middleware/auth");
 
-const authController = require("../controllers/authController");
+const protectController = require("../controllers/authController");
 
-// Auth routes
-router.post("/signup", upload.single("idDocument"), authController.signup);
-router.post("/login", authController.login);
-router.post("/logout", protect, authController.logout);
-router.get("/me", protect, authController.getMe);
-router.put("/setup", protect, authController.profileSetup);
-router.post("/forgot-password", authController.forgotPassword);
-router.post("/reset-password/:token", authController.resetPassword);
+// protect routes
+router.post("/signup", upload.single("idDocument"), protectController.signup);
+router.post("/login", protectController.login);
+router.post("/logout", protect, protectController.logout);
+router.get("/me", protect, protectController.getMe);
+router.put("/setup", protect, protectController.profileSetup);
+router.post("/forgot-password", protectController.forgotPassword);
+router.post("/reset-password/:token", protectController.resetPassword);
 
 // Admin route
-router.post("/admin/login", authController.adminLogin);
+router.post("/admin/login", protectController.adminLogin);
 
 module.exports = router;

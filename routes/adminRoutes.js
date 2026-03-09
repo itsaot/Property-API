@@ -1,57 +1,29 @@
 const express = require("express");
 const router = express.Router();
-const {
-  getFlaggedContent,
-  updateUserStatus,
-  deleteContent,
-  getAnalytics,
-  getAllRentals,
-  deleteRental,
-  getAllUsers, // make sure this exists in adminController
-} = require("../controllers/adminController");
-const { auth, isAdmin } = require("../middleware/auth");
-
-console.log("Admin controller functions check:");
-console.log({
-  getFlaggedContent,
-  updateUserStatus,
-  deleteContent,
-  getAnalytics,
-  getAllRentals,
-  deleteRental,
-  getAllUsers,
-});
+const adminController = require("../controllers/adminController");
+const { protect, admin } = require("../middleware/auth");
 
 // ---------------------------
 // Users
 // ---------------------------
-// Get all users (for admin dashboard)
-router.get("/users", auth, isAdmin, getAllUsers);
-
-// Update user status (suspend/warn)
-router.patch("/users/:id", auth, isAdmin, updateUserStatus);
+router.get("/users", protect, admin, adminController.getAllUsers);
+router.patch("/users/:id", protect, admin, adminController.updateUserStatus);
 
 // ---------------------------
 // Content / Reviews
 // ---------------------------
-// Get all flagged content
-router.get("/flags", auth, isAdmin, getFlaggedContent);
-
-// Delete flagged content (e.g., review)
-router.delete("/content/:type/:id", auth, isAdmin, deleteContent);
+router.get("/flags", protect, admin, adminController.getFlaggedContent);
+router.delete("/content/:type/:id", protect, admin, adminController.deleteContent);
 
 // ---------------------------
 // Rentals
 // ---------------------------
-// Get all rentals
-router.get("/rentals", auth, isAdmin, getAllRentals);
-
-// Delete a rental
-router.delete("/rentals/:id", auth, isAdmin, deleteRental);
+router.get("/rentals", protect, admin, adminController.getAllRentals);
+router.delete("/rentals/:id", protect, admin, adminController.deleteRental);
 
 // ---------------------------
 // Analytics
 // ---------------------------
-router.get("/analytics", auth, isAdmin, getAnalytics);
+router.get("/analytics", protect, admin, adminController.getAnalytics);
 
 module.exports = router;

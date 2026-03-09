@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, admin } = require("../middleware/auth");
 const { addTransaction, getTransactions } = require("../controllers/accountingController");
 
 // Add transaction (admin only)

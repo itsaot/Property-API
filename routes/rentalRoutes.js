@@ -10,7 +10,7 @@ const {
   updateRental,
   deleteRental
 } = require("../controllers/rentalController");
-const { auth } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 // ----------------------
 // PUBLIC ROUTES
@@ -20,15 +20,15 @@ router.get("/public", getPublicRentals); // public homepage listings
 // ----------------------
 // PROTECTED ROUTES
 // ----------------------
-router.get("/", auth, getRentals);        // all visible rentals for logged-in user
-router.get("/my", auth, getMyRentals);    // landlord's own rentals
-router.get("/search", auth, searchRentals); // landlord search
+router.get("/", protect, getRentals);        // all visible rentals for logged-in user
+router.get("/my", protect, getMyRentals);    // landlord's own rentals
+router.get("/search", protect, searchRentals); // landlord search
 
-router.get("/:id", auth, getRentalById); // single rental (only landlord/tenant/admin)
+router.get("/:id", protect, getRentalById); // single rental (only landlord/tenant/admin)
 
 // CRUD routes
-router.post("/", auth, createRental);
-router.put("/:id", auth, updateRental);
-router.delete("/:id", auth, deleteRental);
+router.post("/", protect, createRental);
+router.put("/:id", protect, updateRental);
+router.delete("/:id", protect, deleteRental);
 
 module.exports = router;

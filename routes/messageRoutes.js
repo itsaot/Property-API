@@ -6,12 +6,12 @@ const {
   sendMessage,
   startConversation,
 } = require("../controllers/messageController");
-const { auth } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 // all protected
-router.get("/conversations", auth, getConversations);
-router.get("/:conversationId", auth, getMessages); // ✅ updated
-router.post("/:conversationId", auth, sendMessage);
-router.post("/start/:userId", auth, startConversation);
+router.get("/conversations", protect, getConversations);
+router.get("/:conversationId", protect, getMessages); // ✅ updated
+router.post("/:conversationId", protect, sendMessage);
+router.post("/start/:userId", protect, startConversation);
 
 module.exports = router;
