@@ -1,28 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const { protect, hasSubscription } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 const rentalController = require("../controllers/rentalController");
 
 // ----------------------
-// PREMIUM RENTALS ROUTES
+// PUBLIC ROUTES
 // ----------------------
+router.get("/public", rentalController.getPublicRentals); // GET /api/rentals/public
 
-// Example: Get all available premium rentals
-router.get("/rentals/premium", protect, hasSubscription, rentalController.getPublicRentals);
+// ----------------------
+// PROTECTED ROUTES
+// ----------------------
+router.get("/", protect, rentalController.getRentals); // GET /api/rentals
+router.get("/my", protect, rentalController.getMyRentals); // GET /api/rentals/my
+router.get("/:id", protect, rentalController.getRentalById);
 
-// Example: Premium search (only for subscribed tenants)
-router.get("/rentals/premium/search", protect, hasSubscription, rentalController.searchRentals);
+// Landlord-only
+router.post("/", protect, rentalController.createRental);
+router.put("/:id", protect, rentalController.updateRental);
+router.delete("/:id", protect, rentalController.deleteRental);
 
-// Example: Get single premium rental (protected)
-router.get("/rentals/premium/:id", protect, hasSubscription, rentalController.getRentalById);
-
-// Example: Create a rental (if your premium feature allows landlords to create exclusive listings)
-router.post("/rentals/premium", protect, hasSubscription, rentalController.createRental);
-
-// Example: Update a premium rental
-router.put("/rentals/premium/:id", protect, hasSubscription, rentalController.updateRental);
-
-// Example: Delete a premium rental
-router.delete("/rentals/premium/:id", protect, hasSubscription, rentalController.deleteRental);
+// Search (landlord-only)
+router.get("/search", protect, rentalController.searchRentals);
 
 module.exports = router;
