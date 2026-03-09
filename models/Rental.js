@@ -1,41 +1,22 @@
 const mongoose = require("mongoose");
 
-const rentalSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-
-    address: { type: String, required: true },
-
-    landlord: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    description: { type: String },
-
-    amenities: [String],
-
-    rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Room" }],
-
-    image: { type: String },
-
-    // NEW FIELD
-    pricingType: {
-      type: String,
-      enum: ["monthly", "daily"],
-      default: "monthly",
-    },
-
-    // Optional but usually needed
-    price: {
-      type: Number,
-      required: true,
-    },
-
-    active: { type: Boolean, default: true },
-  },
-  { timestamps: true }
-);
+const rentalSchema = new mongoose.Schema({
+  landlord: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  title: { type: String, required: true },
+  description: String,
+  address: String,
+  price: { type: Number, required: true },
+  pricingType: { type: String, enum: ["monthly", "daily"], default: "monthly" }, // <-- new field
+  images: [String],
+  mapUrl: String,
+  bedrooms: Number,
+  bathrooms: Number,
+  garageSpaces: Number,
+  parkingSpaces: Number,
+  furnished: Boolean,
+  petFriendly: Boolean,
+  available: { type: Boolean, default: true },
+  tenants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+}, { timestamps: true });
 
 module.exports = mongoose.model("Rental", rentalSchema);

@@ -11,7 +11,7 @@ router.get("/public", rentalController.getPublicRentals); // GET /api/rentals/pu
 // ----------------------
 // PROTECTED ROUTES
 // ----------------------
-router.get("/", protect, rentalController.getRentals); // GET /api/rentals
+router.get("/", rentalController.getRentals); // GET /api/rentals
 router.get("/my", protect, rentalController.getMyRentals); // GET /api/rentals/my
 router.get("/:id", protect, rentalController.getRentalById);
 
